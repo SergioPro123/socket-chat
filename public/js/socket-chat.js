@@ -1,24 +1,28 @@
 var socket = io();
-var nombreUrl = getParameterByName('nombre');
-var salaUrl = getParameterByName('sala');
 
-if (!nombreUrl || !salaUrl) {
+var params = new URLSearchParams(window.location.search);
+
+if (!params.has('nombre') || !params.has('sala')) {
     window.location = 'index.html';
-    throw new Error('El nombre y la sala son necesario');
+    throw new Error('El nombre y sala son necesarios');
 }
 
-let usuario = {
-    nombre: nombreUrl,
-    sala: salaUrl
+var usuario = {
+    nombre: params.get('nombre'),
+    sala: params.get('sala')
 };
+
+
+
 socket.on('connect', function() {
     console.log('Conectado al servidor');
 
     socket.emit('entrarChat', usuario, function(resp) {
-        console.log(resp);
+        //console.log('Usuarios conectados', resp);
+        renderizarUsuarios(resp);
     });
-});
 
+});
 
 // escuchar
 socket.on('disconnect', function() {
@@ -29,40 +33,30 @@ socket.on('disconnect', function() {
 
 
 // Enviar información
-/* socket.emit('enviarMensaje', {
-    usuario: 'Fernando',
-    mensaje: 'Hola Mundo'
-}, function(resp) {
-    console.log('respuesta server: ', resp);
-}); */
+// socket.emit('crearMensaje', {
+//     nombre: 'Fernando',
+//     mensaje: 'Hola Mundo'
+// }, function(resp) {
+//     console.log('respuesta server: ', resp);
+// });
 
 // Escuchar información
 socket.on('crearMensaje', function(mensaje) {
-
-    console.log('Servidor:', mensaje);
-
+    //console.log('Servidor:', mensaje);
+    renderizarMensajes(mensaje, false);
+    scrollBottom();
 });
 
-//Escuchar cuando un usuario entra o sale del chat
+// Escuchar cambios de usuarios
+// cuando un usuario entra o sale del chat
 socket.on('listaPersonas', function(personas) {
-
-    console.log(personas);
-
+    //console.log(personas);
+    renderizarUsuarios(personas);
 });
 
+// Mensajes privados
+socket.on('mensajePrivado', function(mensaje) {
 
-//mensajes privados
-socket.on('mensajePrivado', function(data) {
-    console.log('Mensaje Privado: ' + data.mensaje);
+    console.log('Mensaje Privado:', mensaje);
+
 });
-
-
-
-
-
-function getParameterByName(name) {
-    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-        results = regex.exec(location.search);
-    return results === null ? false : decodeURIComponent(results[1].replace(/\+/g, " "));
-}
